@@ -142,14 +142,3 @@ enum Operation {
     case binaryOperation((Double, Double) -> Double)
     case result
 }
-
-/*
- case .plus:         return .binaryOperation({ $0 + $1 })
- case .minus:        return .binaryOperation({ $0 - $1 })
- case .multiply:     return .binaryOperation({ $0 * $1 })
- case .divide:       return .binaryOperation({ $0 / $1 })
- case .percent:      return .unaryOperation({ $0 / 100 })
- case .plusminus:    return .unaryOperation({ -$0 })
- case .ac:           return .constant(0)
- case .equal:        return .result
- */
