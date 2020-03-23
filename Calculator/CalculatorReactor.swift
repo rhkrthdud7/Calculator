@@ -15,7 +15,7 @@ final class CalculatorReactor: Reactor {
     enum Action {
         case numberAndPoint(String)
         case operation(Operation)
-        case reset
+        case clear
     }
     
     enum Mutation {
@@ -25,14 +25,39 @@ final class CalculatorReactor: Reactor {
     }
     
     class State {
-        var result: Double = 0
+        var resultValue: Decimal = 0
+        var operandValue: Double = 0
         var inputText: String = "0"
         var displayText: String = "0"
         var operation: Operation?
         var repeated: (() -> Void)?
         
+        var inputValue: Decimal {
+            if let value = Decimal(string: inputText) {
+                if value != 0 {
+                    return value
+                }
+            }
+            return resultValue
+        }
+        
         var hasInputs: Bool {
             return !inputText.isEmpty
+        }
+        
+        func removeLeadingZeros() {
+            if inputText.isFloatingPoint == false,
+                inputText.count > 1,
+                inputText.hasPrefix("0") {
+                inputText.removeFirst()
+            }
+        }
+        
+        func removeDuplicatePoints() {
+            if inputText.filter({ $0 == "." }).count > 1,
+                let index = inputText.lastIndex(of: ".") {
+                inputText.remove(at: index)
+            }
         }
     }
     
@@ -46,7 +71,7 @@ final class CalculatorReactor: Reactor {
         switch action {
         case .numberAndPoint(let number):
             return Observable.just(Mutation.appendCharacter(number))
-        case .reset:
+        case .clear:
             return Observable.just(Mutation.clearResult)
         case .operation(let operation):
             return Observable.just(Mutation.setOperation(operation))
@@ -56,65 +81,43 @@ final class CalculatorReactor: Reactor {
     func reduce(state: State, mutation: Mutation) -> State {
         switch mutation {
         case .appendCharacter(let character):
-            guard state.inputText.hasNotReachedMaxInputLength else { return state }
-            if state.operation == nil {
-                state.result = 0
-            }
-            if state.inputText.isEmpty {
-                state.inputText = character
-            } else if state.inputText == "0" {
-                if character == "." {
-                    state.inputText = "0."
-                } else {
-                    state.inputText = character
-                }
-            } else {
-                if character == "." {
-                    guard state.inputText.isNotAFloatingPoint else { return state }
-                }
-                state.inputText += character
-            }
+            state.inputText.append(character)
+            state.removeLeadingZeros()
+            state.removeDuplicatePoints()
             state.displayText = state.inputText
-            
         case .clearResult:
-            state.result = 0
+            state.resultValue = 0
+            state.operandValue = 0
             state.inputText = "0"
             state.displayText = "0"
-            
+            state.operation = nil
+            state.repeated = nil
         case .setOperation(let operation):
             switch operation {
-            case .binaryOperation:
+            case .binary:
                 state.operation = operation
-                state.result = state.result + (Double(state.inputText) ?? 0)
-                state.inputText = ""
+                state.resultValue = state.inputValue
+                state.inputText = "0"
+            case .unary(let unary):
+                if var operand =  Decimal(string: state.inputText) {
+                    operand += state.resultValue
+                    state.resultValue = 0
+                    state.inputText = unary(operand).text
+                }
+                state.displayText = state.inputText
             case .result:
-                if let previousOperation = state.operation {
-                    switch previousOperation {
-                    case .binaryOperation(let binary):
-                        if let operand = Double(state.inputText) {
-                            state.repeated = {
-                                state.result = binary(state.result, operand)
-                            }
-                        }
-                    default:
-                        print("")
+                if case let .binary(binary) = state.operation {
+                    let value = state.inputValue
+                    state.repeated = {
+                        state.resultValue = binary(state.resultValue, value)
                     }
                     // reset
-                    state.inputText = ""
+                    state.inputText = "0"
                     state.operation = nil
                 }
                 // operate
                 state.repeated?()
-                
-                // display
-                if state.result.truncatingRemainder(dividingBy: 1) == 0 {
-                    state.displayText = String(format: "%.0f", state.result)
-                } else {
-                    state.displayText = "\(state.result)"
-                }
-                
-            default:
-                break
+                state.displayText = state.resultValue.text
             }
         }
         
@@ -129,16 +132,32 @@ final class CalculatorReactor: Reactor {
 }
 
 fileprivate extension String {
-    var hasNotReachedMaxInputLength: Bool {
-        return self.filter({ "0123456789".contains($0) }).count < 9
+    var isFloatingPoint: Bool {
+        return self.contains(".")
     }
-    var isNotAFloatingPoint: Bool {
-        return !self.contains(".")
+}
+
+fileprivate extension Decimal {
+    var text: String {
+        if isNaN || isInfinite {
+            return "오류"
+        }
+        let string = "\(self)"
+        if string.filter({ "0123456789".contains($0) }).count > 9 {
+            let formatter = NumberFormatter()
+            formatter.maximumSignificantDigits = 7
+            formatter.numberStyle = .scientific
+            formatter.exponentSymbol = "e"
+            if let string = formatter.string(from: self as NSNumber) {
+                return string
+            }
+        }
+        return string
     }
 }
 
 enum Operation {
-    case unaryOperation((Double) -> Double)
-    case binaryOperation((Double, Double) -> Double)
+    case unary((Decimal) -> Decimal)
+    case binary((Decimal, Decimal) -> Decimal)
     case result
 }

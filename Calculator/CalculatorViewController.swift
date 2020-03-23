@@ -40,7 +40,7 @@ class CalculatorViewController: UIViewController, StoryboardView {
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        
+    
         let cornerRadius = buttonZero.bounds.height / 2
         
         [buttonZero, buttonOne, buttonTwo, buttonThree, buttonFour, buttonFive, buttonSix, buttonSeven, buttonEight, buttonNine, buttonPoint, buttonAC, buttonPlusMinus, buttonPercent, buttonEqual, buttonPlus, buttonMinus, buttonMultiply, buttonDivide]
@@ -66,23 +66,31 @@ class CalculatorViewController: UIViewController, StoryboardView {
             .disposed(by: disposeBag)
         
         buttonAC.rx.tap
-            .map { .reset }
+            .map { .clear }
             .bind(to: reactor.action)
             .disposed(by: disposeBag)
         buttonPlus.rx.tap
-            .map { .operation(.binaryOperation({ $0 + $1 })) }
+            .map { .operation(.binary({ $0 + $1 })) }
             .bind(to: reactor.action)
             .disposed(by: disposeBag)
         buttonMinus.rx.tap
-            .map { .operation(.binaryOperation({ $0 - $1 })) }
+            .map { .operation(.binary({ $0 - $1 })) }
             .bind(to: reactor.action)
             .disposed(by: disposeBag)
         buttonMultiply.rx.tap
-            .map { .operation(.binaryOperation({ $0 * $1 })) }
+            .map { .operation(.binary({ $0 * $1 })) }
             .bind(to: reactor.action)
             .disposed(by: disposeBag)
         buttonDivide.rx.tap
-            .map { .operation(.binaryOperation({ $0 / $1 })) }
+            .map { .operation(.binary({ $0 / $1 })) }
+            .bind(to: reactor.action)
+            .disposed(by: disposeBag)
+        buttonPlusMinus.rx.tap
+            .map { .operation(.unary({ -$0 })) }
+            .bind(to: reactor.action)
+            .disposed(by: disposeBag)
+        buttonPercent.rx.tap
+            .map { .operation(.unary({ $0 / 100 })) }
             .bind(to: reactor.action)
             .disposed(by: disposeBag)
         buttonEqual.rx.tap
