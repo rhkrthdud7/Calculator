@@ -11,7 +11,7 @@ import ReactorKit
 import RxSwift
 import RxCocoa
 
-class CalculatorViewController: UIViewController, View {
+class CalculatorViewController: UIViewController, StoryboardView {
     var disposeBag: DisposeBag = DisposeBag()
     
     @IBOutlet weak var labelResult: UILabel!
@@ -37,12 +37,6 @@ class CalculatorViewController: UIViewController, View {
     @IBOutlet weak var buttonMinus: UIButton!
     @IBOutlet weak var buttonMultiply: UIButton!
     @IBOutlet weak var buttonDivide: UIButton!
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        setup()
-    }
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
@@ -51,10 +45,6 @@ class CalculatorViewController: UIViewController, View {
         
         [buttonZero, buttonOne, buttonTwo, buttonThree, buttonFour, buttonFive, buttonSix, buttonSeven, buttonEight, buttonNine, buttonPoint, buttonAC, buttonPlusMinus, buttonPercent, buttonEqual, buttonPlus, buttonMinus, buttonMultiply, buttonDivide]
             .forEach({ $0?.layer.cornerRadius = cornerRadius })
-    }
-    
-    func setup() {
-        reactor = CalculatorReactor()
     }
     
     func bind(reactor: CalculatorReactor) {
