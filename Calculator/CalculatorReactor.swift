@@ -26,7 +26,6 @@ final class CalculatorReactor: Reactor {
     
     class State {
         var resultValue: Decimal = 0
-        var operandValue: Double = 0
         var inputText: String = "0"
         var displayText: String = "0"
         var operation: Operation?
@@ -87,7 +86,6 @@ final class CalculatorReactor: Reactor {
             state.displayText = state.inputText
         case .clearResult:
             state.resultValue = 0
-            state.operandValue = 0
             state.inputText = "0"
             state.displayText = "0"
             state.operation = nil
@@ -121,11 +119,6 @@ final class CalculatorReactor: Reactor {
             }
         }
         
-//        print("result: \(state.result)")
-//        print("inputText: \(state.inputText)")
-//        print("displayText: \(state.displayText)")
-//        print("operation: \(state.operation)")
-//        print("repeated: \(state.repeated)\n")
         return state
     }
     
